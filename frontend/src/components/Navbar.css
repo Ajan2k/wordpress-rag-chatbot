@@ -1,0 +1,75 @@
+/* frontend/src/components/Navbar.css */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    margin: 12px 20px 0;
+    position: sticky;
+    top: 12px;
+    z-index: 50;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.brand-emoji {
+    font-size: 1.4rem;
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.4));
+}
+
+.brand-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-success));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.nav-links {
+    display: flex;
+    gap: 4px;
+}
+
+.nav-link {
+    padding: 8px 18px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background: var(--bg-glass);
+}
+
+.nav-link.active {
+    color: var(--accent-primary);
+    background: rgba(34, 211, 238, 0.1);
+    font-weight: 600;
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        margin: 8px 12px 0;
+        padding: 8px 16px;
+    }
+
+    .brand-text {
+        display: none;
+    }
+
+    .nav-link {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+}

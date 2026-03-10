@@ -1,1 +1,23 @@
+# Python
 .venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker volumes (local)
+qdrant_storage/
+redis_data/
