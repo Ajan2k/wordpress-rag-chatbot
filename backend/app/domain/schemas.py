@@ -31,10 +31,12 @@ class SourceDocument(BaseModel):
     content_preview: str = Field(
         ..., description="First ~200 chars of the chunk."
     )
-    post_id: int
+    doc_id: str              # Kitchen Herald document id (article_123, event_45, etc.)
+    doc_type: str = "article"  # article, event, job
     score: float = Field(
         ..., description="Combined RRF relevance score."
     )
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ChatResponse(BaseModel):
@@ -52,7 +54,7 @@ class SyncTriggerResponse(BaseModel):
     """Returned when a new sync job is queued."""
     task_id: str
     status: str = "QUEUED"
-    message: str = "WordPress data synchronisation has been queued."
+    message: str = "Kitchen Herald data synchronisation has been queued."
 
 
 class TaskState(str, Enum):
@@ -80,21 +82,23 @@ class TaskStatusResponse(BaseModel):
 # ════════════════════════════════════════════════════════════════════
 
 
-class WPDocument(BaseModel):
-    """Represents a single WordPress post/page extracted from MySQL."""
-    post_id: int
+class KHDocument(BaseModel):
+    """Represents a Kitchen Herald document (article, event, or job listing)."""
+    doc_id: str           # unique id: article_ID, event_ID, or job_ID
     title: str
-    content: str          # raw HTML-stripped text
-    post_type: str = "post"
-    post_status: str = "publish"
-    url: str = ""
+    content: str          # clean, HTML-stripped text
+    doc_type: str = Field("article", description="article | event | job")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    published_date: Optional[str] = None  # ISO datetime or date string
 
 
 class DocumentChunk(BaseModel):
-    """A text chunk derived from a WPDocument after splitting."""
-    chunk_id: str         # deterministic id: f"{post_id}_{chunk_index}"
-    post_id: int
+    """A text chunk derived from a KHDocument after splitting."""
+    chunk_id: str         # deterministic id: f"{doc_id}_{chunk_index}"
+    doc_id: str           # original document id (article_ID, event_ID, job_ID)
+    doc_type: str = "article"
     title: str
-    content: str          # plain text chunk
+    content: str          # plain text chunk (~500 tokens)
     chunk_index: int
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+

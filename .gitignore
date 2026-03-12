@@ -21,3 +21,13 @@ Thumbs.db
 # Docker volumes (local)
 qdrant_storage/
 redis_data/
+ARCHITECTURE.md
+DEPLOYMENT_CHECKLIST.md
+OPTIMIZATION_GUIDE.md
+OPTIMIZATION_SUMMARY.md
+QUICK_REFERENCE.md
+README.md
+commands.txt
+backend\test_api.py
+backend\test_kh_db.py
+backend\.env.example

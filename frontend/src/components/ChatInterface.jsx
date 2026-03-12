@@ -13,10 +13,10 @@ import './ChatInterface.css';
 
 // ── Suggested starter questions ────────────────────────────────
 const SUGGESTIONS = [
-    '🩺 What are the symptoms of Type 2 Diabetes?',
-    '💊 What are common treatments for hypertension?',
-    '🥗 What foods help reduce cholesterol?',
-    '🏥 When should I see a doctor for a headache?',
+    'Show me all the latest news articles?',
+    'What upcoming food and hospitality events?',
+    'List all the current advertisers running sponsors?',
+    'Are there any open jobs related to food safety or quality control in Chennai?',
 ];
 
 export default function ChatInterface() {

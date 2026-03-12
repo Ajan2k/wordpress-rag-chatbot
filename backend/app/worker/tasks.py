@@ -2,15 +2,18 @@
 """
 Celery tasks for the asynchronous ETL pipeline.
 
-The sync_wordpress_data task runs on a Celery worker with concurrency=1,
+The sync_kitchen_herald_data task runs on a Celery worker with concurrency=1,
 ensuring the BGE-M3 model never exceeds the 4 GB VRAM limit.
+
+Extracts articles, events, and job listings from Kitchen Herald MySQL,
+chunks them, embeds with BGE-M3, and upserts to Qdrant for hybrid retrieval.
 
 Progress updates are pushed to Redis and polled by the admin dashboard.
 """
 import logging
 from celery import shared_task
 
-from app.repositories.wp_repository import WPRepository
+from app.repositories.kh_repository import KitchenHeraldRepository
 from app.services.chunking_engine import ChunkingEngine
 from app.core.embedding_model import EmbeddingModel
 from app.repositories.vector_store import VectorStore
@@ -25,13 +28,13 @@ def _batched(iterable, batch_size: int):
         yield iterable[i : i + batch_size]
 
 
-@shared_task(bind=True, name="sync_wordpress_data")
-def sync_wordpress_data(self):
+@shared_task(bind=True, name="sync_kitchen_herald_data")
+def sync_kitchen_herald_data(self):
     """
-    Full Extract → Transform → Load pipeline.
+    Full Extract → Transform → Load pipeline for Kitchen Herald.
 
     Phases:
-      1. Extract published posts from WordPress MySQL
+      1. Extract published articles, events & job listings from MySQL
       2. Chunk the raw text using recursive splitting
       3. Embed chunks via BGE-M3 (dense + sparse)
       4. Upsert to Qdrant for hybrid retrieval
@@ -46,28 +49,44 @@ def sync_wordpress_data(self):
             meta={
                 "current": 5,
                 "total": 100,
-                "status": "Connecting to WordPress MySQL database …",
+                "status": "Connecting to Kitchen Herald MySQL database …",
             },
         )
-        wp_repo = WPRepository()
-        raw_documents = wp_repo.extract_published_content()
+        kh_repo = KitchenHeraldRepository()
+        
+        # Extract all content types
+        raw_documents = kh_repo.extract_all_content()
         doc_count = len(raw_documents)
+        
+        # Count by type for detailed logging
+        article_count = kh_repo.get_article_count()
+        event_count = kh_repo.get_event_count()
+        job_count = kh_repo.get_job_count()
 
         self.update_state(
             state="PROGRESS",
             meta={
                 "current": 15,
                 "total": 100,
-                "status": f"Extracted {doc_count} published documents.",
+                "status": (
+                    f"Extracted {article_count} articles, "
+                    f"{event_count} events, {job_count} jobs."
+                ),
             },
         )
-        logger.info("Extraction complete: %d documents.", doc_count)
+        logger.info(
+            "Extraction complete: %d articles, %d events, %d jobs (total: %d docs).",
+            article_count,
+            event_count,
+            job_count,
+            doc_count,
+        )
 
         if doc_count == 0:
             return {
                 "current": 100,
                 "total": 100,
-                "status": "No published content found in the database.",
+                "status": "No content found in Kitchen Herald database.",
                 "chunks_processed": 0,
             }
 
@@ -95,7 +114,7 @@ def sync_wordpress_data(self):
                 "status": f"Created {chunk_count} text chunks.",
             },
         )
-        logger.info("Chunking complete: %d chunks.", chunk_count)
+        logger.info("Chunking complete: %d chunks from %d documents.", chunk_count, doc_count)
 
         # ── Phase 3: Reset collection ──────────────────────────────
         self.update_state(
@@ -107,7 +126,14 @@ def sync_wordpress_data(self):
             },
         )
         vector_store = VectorStore()
-        vector_store.delete_collection()  # full re-sync strategy
+        try:
+            vector_store.delete_collection()  # full re-sync strategy
+            logger.info("Deleted existing Qdrant collection.")
+        except Exception as e:
+            logger.warning("Could not delete collection (may not exist): %s", str(e))
+        
+        # Recreate collection
+        vector_store._ensure_collection()
 
         # ── Phase 4: Embed + Upsert in batches ────────────────────
         embedder = EmbeddingModel()
@@ -144,7 +170,10 @@ def sync_wordpress_data(self):
         result = {
             "current": 100,
             "total": 100,
-            "status": "Synchronisation complete ✓",
+            "status": "Kitchen Herald synchronisation complete ✓",
+            "articles_processed": article_count,
+            "events_processed": event_count,
+            "jobs_processed": job_count,
             "documents_extracted": doc_count,
             "chunks_processed": chunk_count,
         }

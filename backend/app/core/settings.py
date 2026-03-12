@@ -5,7 +5,6 @@ Uses pydantic-settings for automatic .env file loading and type validation.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import SecretStr
-from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -15,18 +14,16 @@ class Settings(BaseSettings):
     overridden via a `.env` file or OS-level environment variables.
     """
 
-    project_name: str = "Herald Kitchen — Multilingual WP RAG"
+    project_name: str = "Kitchen Herald — B2B HoReCA Chatbot RAG"
 
     # ── Infrastructure Connections ──────────────────────────────────
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
-    qdrant_collection: str = "wp_healthcare_content"
+    qdrant_collection: str = "kitchen_herald_content"
     redis_url: str = "redis://localhost:6379/0"
 
-    # ── WordPress MySQL Database ───────────────────────────────────
-    wp_db_uri: str = "mysql+pymysql://root:password@localhost:3306/wordpress"
-    # Optional: WordPress table prefix (usually 'wp_')
-    wp_table_prefix: str = "wp_"
+    # ── Kitchen Herald MySQL Database ───────────────────────────────
+    kh_db_uri: str = "mysql+pymysql://root:password@localhost:3306/kitchen_herald"
 
     # ── Groq Cloud API (Generation Layer) ──────────────────────────
     groq_api_key: SecretStr

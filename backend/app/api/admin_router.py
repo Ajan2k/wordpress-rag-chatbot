@@ -1,6 +1,6 @@
 # backend/app/api/admin_router.py
 """
-Admin API router — triggers and monitors the WordPress data sync.
+Admin API router — triggers and monitors the Kitchen Herald data sync.
 
 Endpoints:
   POST /api/admin/sync           → Queue a new sync job
@@ -14,8 +14,8 @@ from celery.result import AsyncResult
 
 from app.domain.schemas import SyncTriggerResponse, TaskStatusResponse, TaskState
 from app.worker.celery_app import celery_app
-from app.worker.tasks import sync_wordpress_data
-from app.repositories.wp_repository import WPRepository
+from app.worker.tasks import sync_kitchen_herald_data
+from app.repositories.kh_repository import KitchenHeraldRepository
 from app.repositories.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -23,21 +23,21 @@ router = APIRouter()
 
 
 # ════════════════════════════════════════════════════════════════════
-# POST /sync — Trigger WordPress data synchronisation
+# POST /sync — Trigger Kitchen Herald data synchronisation
 # ════════════════════════════════════════════════════════════════════
 @router.post(
     "/sync",
     response_model=SyncTriggerResponse,
-    summary="Trigger WordPress data sync",
+    summary="Trigger Kitchen Herald data sync",
     description="Queues an asynchronous ETL job via Celery.",
 )
 async def trigger_sync():
     """
-    Dispatch the sync_wordpress_data Celery task.
+    Dispatch the sync_kitchen_herald_data Celery task.
     Returns the task ID immediately so the frontend can poll for progress.
     """
-    task = sync_wordpress_data.delay()
-    logger.info("Queued sync task: %s", task.id)
+    task = sync_kitchen_herald_data.delay()
+    logger.info("Queued Kitchen Herald sync task: %s", task.id)
     return SyncTriggerResponse(task_id=task.id)
 
 
@@ -118,16 +118,19 @@ async def get_task_status(task_id: str):
 @router.get(
     "/status",
     summary="System health overview",
-    description="Returns counts from WordPress DB and Qdrant collection.",
+    description="Returns counts from Kitchen Herald DB and Qdrant collection.",
 )
 async def system_status():
     """
     Quick system health check for the admin dashboard.
     """
     try:
-        wp_count = WPRepository().get_document_count()
+        kh_repo = KitchenHeraldRepository()
+        article_count = kh_repo.get_article_count()
+        event_count = kh_repo.get_event_count()
+        job_count = kh_repo.get_job_count()
     except Exception as e:
-        wp_count = f"Error: {e}"
+        article_count = event_count = job_count = f"Error: {e}"
 
     try:
         qdrant_info = VectorStore().get_collection_info()
@@ -135,6 +138,10 @@ async def system_status():
         qdrant_info = {"error": str(e)}
 
     return {
-        "wordpress": {"published_posts": wp_count},
+        "kitchen_herald": {
+            "articles": article_count,
+            "events": event_count,
+            "jobs": job_count,
+        },
         "qdrant": qdrant_info,
     }

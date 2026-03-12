@@ -102,10 +102,12 @@ class VectorStore:
                 },
                 payload={
                     "chunk_id": chunk.chunk_id,
-                    "post_id": chunk.post_id,
+                    "doc_id": chunk.doc_id,
+                    "doc_type": chunk.doc_type,
                     "title": chunk.title,
                     "content": chunk.content,
                     "chunk_index": chunk.chunk_index,
+                    **chunk.metadata,  # Flatten metadata into payload
                 },
             )
             points.append(point)
@@ -180,8 +182,11 @@ class VectorStore:
                 SourceDocument(
                     title=p.get("title", ""),
                     content_preview=p.get("content", "")[:200],
-                    post_id=p.get("post_id", 0),
+                    doc_id=p.get("doc_id", "unknown"),
+                    doc_type=p.get("doc_type", "article"),
                     score=round(rrf_scores[pid], 6),
+                    metadata={k: v for k, v in p.items() if k not in 
+                              ["chunk_id", "doc_id", "doc_type", "title", "content", "chunk_index"]},
                 )
             )
         return sources
@@ -205,4 +210,4 @@ class VectorStore:
         """Delete the entire collection (used before a full re-sync)."""
         self._client.delete_collection(self._collection)
         logger.warning("Deleted Qdrant collection '%s'.", self._collection)
-        self._ensure_collection()
+

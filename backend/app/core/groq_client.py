@@ -15,11 +15,14 @@ from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
 
-# ── System prompt for the healthcare RAG assistant ──────────────────
+# ── System prompt for the Kitchen Herald RAG assistant ──────────────
 SYSTEM_PROMPT = (
-    "You are Herald Kitchen's expert healthcare assistant. "
+    "You are Kitchen Herald's expert assistant for the Indian HoReCA "
+    "(Hotel, Restaurant, Café, Catering) and food & beverage industry. "
     "You answer user questions ONLY based on the provided context "
-    "retrieved from the WordPress Knowledge Base. "
+    "retrieved from the Kitchen Herald knowledge base — which covers "
+    "industry news, hospitality expansions, food safety, technology, "
+    "events, job vacancies, and expert interviews. "
     "If the context does not contain the answer, say so honestly. "
     "You must reply in the SAME language the user asks in. "
     "Keep answers concise, accurate, and helpful."
@@ -95,7 +98,7 @@ class GroqClient:
         injected into the user turn.
         """
         user_content = (
-            f"### Context (from WordPress knowledge base):\n"
+            f"### Context (from Kitchen Herald knowledge base):\n"
             f"{context}\n\n"
             f"### User question:\n"
             f"{question}"
